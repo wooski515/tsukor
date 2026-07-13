@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSUKOR </title>
+    <link rel="icon" href="favicon.png" type="image/x-icon">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <a href="index.html" class="logo">TSUKOR</a>
+
+        <nav class="filter-nav">
+            <a href="index.html?cat=tsukor" data-cat="tsukor">Цукор</a>
+            <a href="index.html?cat=sil" data-cat="sil">Сіль</a>
+            <a href="index.html?cat=perets" data-cat="perets">Перець</a>
+        </nav>
+
+        <div class="controls">
+            <button class="size-btn" onclick="changeSize(-100)">−</button>
+            <button class="size-btn" onclick="changeSize(100)">+</button>
+        </div>
+    </header>
+
+    <main id="gallery" class="gallery">
+        <p class="empty-msg" hidden>В цій категорії поки пусто...</p>
+    </main>
+</div>
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026, <strong>TSUKOR</strong> <a href="https://creativecommons.org/licenses/by/4.0/deed.uk" target="_blank" rel="noopener"> / CC BY 4.0</a></p>
+        </div>
+    </footer>
+<script src="images.js"></script>
+<script>
+    function changeSize(delta) {
+        const root = document.documentElement;
+        const currentSize = parseInt(getComputedStyle(root).getPropertyValue('--card-size'));
+        const newSize = Math.min(Math.max(currentSize + delta, 400), 1700);
+        root.style.setProperty('--card-size', newSize + 'px');
+    }
+
+    (function () {
+        const category = new URLSearchParams(location.search).get('cat') || 'tsukor';
+
+        document.querySelectorAll('.filter-nav a').forEach(link => {
+            link.classList.toggle('active', link.dataset.cat === category);
+        });
+
+        const gallery = document.getElementById('gallery');
+        const files = Object.prototype.hasOwnProperty.call(IMAGES, category) ? IMAGES[category] : [];
+
+        files.forEach((name, i) => {
+            const img = document.createElement('img');
+            img.src = 'img/' + category + '/' + name;
+            img.alt = '';
+            img.loading = i < 2 ? 'eager' : 'lazy';
+            img.decoding = 'async';
+            img.className = 'photo';
+            gallery.appendChild(img);
+        });
+
+        document.querySelector('.empty-msg').hidden = files.length > 0;
+    })();
+
+    (function () {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+        const ZOOM = 2.5;
+        const lens = document.createElement('div');
+        lens.className = 'lens';
+        lens.hidden = true;
+        document.body.appendChild(lens);
+
+        let active = null;
+
+        function move(e) {
+            const rect = active.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+                hide();
+                return;
+            }
+            const r = lens.offsetWidth / 2;
+            lens.style.left = (e.clientX - r) + 'px';
+            lens.style.top = (e.clientY - r) + 'px';
+            lens.style.backgroundSize = (rect.width * ZOOM) + 'px ' + (rect.height * ZOOM) + 'px';
+            lens.style.backgroundPosition = -(x * ZOOM - r) + 'px ' + -(y * ZOOM - r) + 'px';
+        }
+
+        function show(img, e) {
+            active = img;
+            img.classList.add('zooming');
+            lens.style.backgroundImage = 'url("' + img.src + '")';
+            lens.hidden = false;
+            move(e);
+        }
+
+        function hide() {
+            if (!active) return;
+            active.classList.remove('zooming');
+            active = null;
+            lens.hidden = true;
+        }
+
+        document.addEventListener('click', function (e) {
+            if (active) {
+                hide();
+                return;
+            }
+            const img = e.target.closest('.photo');
+            if (img) show(img, e);
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (active) move(e);
+        });
+        window.addEventListener('scroll', hide, true);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') hide();
+        });
+    })();
+</script>
+
+</body>
+</html>
